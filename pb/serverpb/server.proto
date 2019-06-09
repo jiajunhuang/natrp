@@ -33,19 +33,15 @@ message LoginRequest {
 message LoginResponse {
     Code code = 1;
     string msg = 2;
-    string token = 3;
+    int64 port = 3;
 }
 
 message MsgRequest {
-    MsgType type = 1;
-    string token = 2;
-    bytes data = 3;
+    bytes data = 1;
 }
 
 message MsgResponse {
-    Code code = 1;
-    MsgType type = 2;
-    bytes data = 3;
+    bytes data = 1;
 }
 
 service ServerService {
