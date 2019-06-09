@@ -24,6 +24,7 @@ func main() {
 	defer logger.Sync()
 
 	flag.Parse()
+	retryCount := 0
 
 	for {
 		func() {
@@ -46,6 +47,7 @@ func main() {
 			}
 
 			logger.Info("success to connect to server", zap.String("addr", *serverAddr))
+			retryCount = 0
 
 			localConn, err := net.Dial("tcp", *localAddr)
 			if err != nil {
@@ -88,7 +90,14 @@ func main() {
 			}
 		}()
 
-		time.Sleep(time.Second * time.Duration(3))
+		sleepDuration := 2
+		if retryCount < 10 {
+			sleepDuration = 1
+		} else if retryCount > 60 {
+			sleepDuration = 10
+		}
+		time.Sleep(time.Second * time.Duration(sleepDuration))
 		logger.Info("trying to reconnect", zap.String("addr", *serverAddr))
+		retryCount++
 	}
 }
