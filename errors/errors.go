@@ -13,4 +13,6 @@ var (
 	ErrFailedToListen = errors.New("failed to listen, bad port")
 	// ErrBadRequest bad request
 	ErrBadRequest = errors.New("bad request")
+	// ErrBadMetadata bad metadata
+	ErrBadMetadata = errors.New("bad metadata")
 )

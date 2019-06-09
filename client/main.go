@@ -8,6 +8,7 @@ import (
 	"github.com/jiajunhuang/natrp/dial"
 	"github.com/jiajunhuang/natrp/pb/serverpb"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -22,7 +23,8 @@ func main() {
 
 	for {
 		func() {
-			ctx := context.Background()
+			md := metadata.Pairs("natrp-token", "balalaxiaomoxian")
+			ctx := metadata.NewOutgoingContext(context.Background(), md)
 
 			client, conn, err := dial.WithServer(ctx, serverAddr, false)
 			if err != nil {
@@ -63,8 +65,6 @@ func main() {
 
 			data := make([]byte, 1024)
 			for {
-				defer localConn.Close()
-
 				n, err := localConn.Read(data)
 				if err != nil {
 					logger.Error("failed to read", zap.Error(err))

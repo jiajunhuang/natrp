@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jiajunhuang/natrp/errors"
 	"github.com/jiajunhuang/natrp/pb/serverpb"
 	reuse "github.com/libp2p/go-reuseport"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -25,7 +27,19 @@ func (s *service) Login(ctx context.Context, req *serverpb.LoginRequest) (*serve
 }
 
 func (s *service) Msg(stream serverpb.ServerService_MsgServer) error {
-	listener, err := reuse.Listen("tcp", "0.0.0.0:10033")
+	md, ok := metadata.FromIncomingContext(stream.Context())
+	if !ok {
+		return errors.ErrBadMetadata
+	}
+	logger.Info("metadata", zap.Any("metadata", md))
+	token := md.Get("natrp-token")
+	if len(token) != 1 {
+		return errors.ErrBadMetadata
+	}
+
+	listenAddr := getListenAddrByToken(token[0])
+
+	listener, err := reuse.Listen("tcp", listenAddr)
 	if err != nil {
 		logger.Error("failed to listen", zap.Error(err))
 		return err
@@ -43,6 +57,8 @@ func (s *service) Msg(stream serverpb.ServerService_MsgServer) error {
 	defer conn.Close()
 
 	go func() {
+		defer conn.Close()
+
 		for {
 			req, err := stream.Recv()
 			if err != nil {
@@ -70,4 +86,8 @@ func (s *service) Msg(stream serverpb.ServerService_MsgServer) error {
 			return err
 		}
 	}
+}
+
+func getListenAddrByToken(token string) string {
+	return "0.0.0.0:10033"
 }
