@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package serverpb;
+
+enum Code {
+    CodeSucceed = 0;
+    CodeFailed = 1;
+}
+
+enum MsgType {
+    Proxy = 0;
+    PingPong = 1;
+    Disconnect = 2;
+}
+
+// for communication in server <-> client
+
+message RegisterRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message RegisterResponse {
+    Code code = 1;
+    string msg = 2;
+}
+
+message LoginRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    Code code = 1;
+    string msg = 2;
+    string token = 3;
+}
+
+message MsgRequest {
+    MsgType type = 1;
+    string token = 2;
+    bytes data = 3;
+}
+
+message MsgResponse {
+    Code code = 1;
+    MsgType type = 2;
+    bytes data = 3;
+}
+
+service ServerService {
+    rpc Register(RegisterRequest) returns (RegisterResponse) {}
+    rpc Login(LoginRequest) returns (LoginResponse) {}
+    rpc Msg(stream MsgRequest) returns (stream MsgResponse) {}
+}
