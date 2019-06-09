@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"net"
 	"time"
 
@@ -12,26 +13,31 @@ import (
 )
 
 var (
-	serverAddr = "127.0.0.1:10022"
-	token      = "balalaxiaomoxian"
-	logger, _  = zap.NewProduction()
-	remoteAddr = ""
+	logger, _ = zap.NewProduction()
+
+	localAddr  = flag.String("local", "127.0.0.1:80", "-local=<你本地需要转发的地址>")
+	serverAddr = flag.String("server", "natrp.jiajunhuang.com:10022", "-server=<你的服务器地址>")
+	token      = flag.String("token", "balalaxiaomoxian", "-token=<你的token>")
 )
 
 func main() {
 	defer logger.Sync()
 
+	flag.Parse()
+
 	for {
 		func() {
-			md := metadata.Pairs("natrp-token", "balalaxiaomoxian")
+			md := metadata.Pairs("natrp-token", *token)
 			ctx := metadata.NewOutgoingContext(context.Background(), md)
 
-			client, conn, err := dial.WithServer(ctx, serverAddr, false)
+			client, conn, err := dial.WithServer(ctx, *serverAddr, false)
 			if err != nil {
 				logger.Error("failed to connect to server server", zap.Error(err))
 				return
 			}
 			defer conn.Close()
+
+			logger.Info("try to connect to server", zap.String("addr", *serverAddr))
 
 			stream, err := client.Msg(ctx)
 			if err != nil {
@@ -39,12 +45,16 @@ func main() {
 				return
 			}
 
-			localConn, err := net.Dial("tcp", "127.0.0.1:22")
+			logger.Info("success to connect to server", zap.String("addr", *serverAddr))
+
+			localConn, err := net.Dial("tcp", *localAddr)
 			if err != nil {
 				logger.Error("failed to communicate with local port", zap.Error(err))
 				return
 			}
 			defer localConn.Close()
+
+			logger.Info("start to build a brige between local and server", zap.String("server", *serverAddr), zap.String("local", *localAddr))
 
 			go func() {
 				defer localConn.Close()
@@ -78,7 +88,7 @@ func main() {
 			}
 		}()
 
-		time.Sleep(time.Second * time.Duration(1))
-		logger.Info("trying to reconnect...")
+		time.Sleep(time.Second * time.Duration(3))
+		logger.Info("trying to reconnect", zap.String("addr", *serverAddr))
 	}
 }
