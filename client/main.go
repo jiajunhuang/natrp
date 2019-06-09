@@ -90,13 +90,13 @@ func main() {
 			}
 		}()
 
-		sleepDuration := 2
 		if retryCount < 10 {
-			sleepDuration = 1
+			time.Sleep(time.Microsecond * time.Duration(100*retryCount))
+		} else if retryCount < 60 {
+			time.Sleep(time.Second * time.Duration(1))
 		} else if retryCount > 60 {
-			sleepDuration = 10
+			time.Sleep(time.Second * time.Duration(10))
 		}
-		time.Sleep(time.Second * time.Duration(sleepDuration))
 		logger.Info("trying to reconnect", zap.String("addr", *serverAddr))
 		retryCount++
 	}
